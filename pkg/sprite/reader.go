@@ -3,6 +3,7 @@ package sprite
 import (
 	"io"
 
+	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 	"github.com/goosechooser/cps2gfx/pkg/tile"
 )
 
@@ -78,19 +79,14 @@ func (d *Decoder) decode() (b []byte, err error) {
 // [tile0-row0] [tile1-row0] ... [tileN-row0]
 // ... ... ...
 // [tile0-rowN] [tile1-rowN] ... [tileN-rowN]
-// this could be accomplished by a variadic interleave u kno
 func combineHorizontal(tiles []tile.Tile, dx int) (b []byte) {
-	tSize := len(tiles[0].Data)
 	rowLength := tiles[0].Size
-	b = make([]byte, dx*tSize)
-
-	for y := 0; y < rowLength; y++ {
-		start := rowLength * y
-		for x, t := range tiles {
-			offset := x * rowLength
-			copy(b[start*dx+offset:start*dx+offset+rowLength], t.Data[start:start+rowLength])
-		}
+	data := make([][]byte, len(tiles))
+	for i := range tiles {
+		data[i] = tiles[i].Data
 	}
+
+	b = byteutils.Interleave(rowLength, data...)
 
 	return b
 }
