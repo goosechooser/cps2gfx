@@ -16,7 +16,7 @@ func TestInterleave(t *testing.T) {
 		{[]byte("ac"), []byte("bd"), []byte("acbd"), 2},
 	}
 	for _, c := range cases {
-		got := byteutils.Interleave(c.file1, c.file2, c.n)
+		got := byteutils.Interleave(c.n, c.file1, c.file2)
 		if bytes.Equal(got, c.interleaved) != true {
 			t.Errorf("Interleave(%q, %q) == %q, want %q", c.file1, c.file2, got, c.interleaved)
 		}
@@ -58,7 +58,7 @@ func TestInterleaveThenDeinterleave(t *testing.T) {
 		{[]byte("ac"), []byte("bd"), []byte("acbd"), 2},
 	}
 	for _, c := range cases {
-		got := byteutils.Interleave(c.file1, c.file2, c.n)
+		got := byteutils.Interleave(c.n, c.file1, c.file2)
 		final := byteutils.Deinterleave(got, c.n)
 
 		if bytes.Equal(final[0], c.file1) != true {
