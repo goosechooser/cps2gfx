@@ -17,7 +17,7 @@ func Interleave(n int, b ...[]byte) (ibuf []byte) {
 		start := i * ilength
 		for j, buf := range b {
 			offset := j * n
-			copy(ibuf[start+offset:start+offset+n], buf[i:i+n])
+			copy(ibuf[start+offset:], buf[i:i+n])
 		}
 	}
 
