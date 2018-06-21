@@ -3,7 +3,6 @@ package sprite
 import (
 	"io"
 
-	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 	"github.com/goosechooser/cps2gfx/pkg/tile"
 )
 
@@ -17,6 +16,8 @@ type Decoder struct {
 	r             reader
 	BaseTile      string
 	Width, Height int
+	//rowOffset represents the distance between rows that make up sprites
+	rowOffset int64
 }
 
 // DecodeOption just an alias for fun
@@ -46,18 +47,21 @@ func Height(h int) DecodeOption {
 // NewDecoder is a constructor ofc
 func NewDecoder(r io.ReadSeeker, opts ...DecodeOption) *Decoder {
 	d := &Decoder{Decoder: *tile.NewDecoder(r), r: r}
+	// probably make this a DecodeOption later?
+	d.rowOffset = int64(d.Decoder.Dimensions * 128)
 
 	for _, opt := range opts {
 		opt(d)
 	}
-
 	return d
 }
 
 // decode handles reading the data that makes up a Sprite.
-// The actual reading/unpacking is handled by tile.Decoder
+// The actual reading/unpacking is handled by the tile.Decoder
 func (d *Decoder) decode() (b []byte, err error) {
 	row := make([]tile.Tile, d.Width)
+	rowLength := d.Width * 256
+	b = make([]byte, rowLength*d.Height)
 
 	for h := 0; h < d.Height; h++ {
 		for w := 0; w < d.Width; w++ {
@@ -67,7 +71,7 @@ func (d *Decoder) decode() (b []byte, err error) {
 			}
 		}
 
-		b = append(b, combineHorizontal(row, d.Width)...)
+		combineHorizontal(row, b[h*rowLength:])
 		if err = d.nextRow(); err != nil {
 			return b, err
 		}
@@ -79,22 +83,20 @@ func (d *Decoder) decode() (b []byte, err error) {
 // [tile0-row0] [tile1-row0] ... [tileN-row0]
 // ... ... ...
 // [tile0-rowN] [tile1-rowN] ... [tileN-rowN]
-func combineHorizontal(tiles []tile.Tile, dx int) (b []byte) {
+func combineHorizontal(tiles []tile.Tile, b []byte) {
 	rowLength := tiles[0].Size
-	data := make([][]byte, len(tiles))
-	for i := range tiles {
-		data[i] = tiles[i].Data
+
+	for y := 0; y < rowLength; y++ {
+		start := rowLength * y
+		for x, t := range tiles {
+			offset := x * rowLength
+			copy(b[start*len(tiles)+offset:], t.Data[start:start+rowLength])
+		}
 	}
-
-	b = byteutils.Interleave(rowLength, data...)
-
-	return b
 }
 
 func (d *Decoder) nextRow() (err error) {
-	//rowOffset represents the distance between rows that make up sprites
-	rowOffset := int64(16 * 128)
-	_, err = d.r.Seek(rowOffset, io.SeekCurrent)
+	_, err = d.r.Seek(d.rowOffset, io.SeekCurrent)
 	if err != nil {
 		return err
 	}
