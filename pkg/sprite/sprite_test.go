@@ -1,6 +1,7 @@
 package sprite_test
 
 import (
+	"io"
 	"bytes"
 	"io/ioutil"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/goosechooser/cps2gfx/pkg/sprite"
-	"github.com/goosechooser/cps2gfx/pkg/tile"
 )
 
 func open(f string) *bytes.Reader {
@@ -28,17 +28,71 @@ func open(f string) *bytes.Reader {
 
 func TestCombineTiles(t *testing.T) {
 	r := open("testdata/cooldata")
-	d := tile.NewDecoder(r)
-	tiles := make([]tile.Tile, 3)
+	opts := []sprite.DecodeOption{
+		sprite.Width(1),
+		sprite.Height(1),
+	}
+	expected := make([]byte, 256)
+	r.Read(expected)
+	r.Seek(0, io.SeekStart)
 
-	for i := range tiles {
-		tiles[i], _ = d.Decode()
+	d := sprite.NewDecoder(r, opts...)
 
+	s, err := d.Decode()
+	if err != nil {
+		log.Fatalf("Decoding error, %v", err)
 	}
 
-	s := sprite.Sprite{0, 3, 1, tiles}
+	b := new(bytes.Buffer)
+	e := sprite.NewEncoder(b)
 
-	if false {
-		t.Error(s.String())
+	e.Encode(s)
+	t.Logf("who %x\n", b.Bytes())
+
+	if bytes.Equal(b.Bytes(), expected) != true {
+		t.Logf("who %x\n", expected)
+		t.Logf("who %x\n", b.Bytes())
+	}
+}
+
+func BenchmarkDecode(b *testing.B) {
+	r := open("testdata/cooldata")
+	opts := []sprite.DecodeOption{
+		sprite.Width(1),
+		sprite.Height(1),
+	}
+	expected := make([]byte, 256)
+	r.Read(expected)
+	r.Seek(0, io.SeekStart)
+
+	d := sprite.NewDecoder(r, opts...)
+
+	for i := 0; i < b.N; i++ {
+		d.Decode()
+	}
+}
+
+func BenchmarkEncode(b *testing.B) {
+	r := open("testdata/cooldata")
+	opts := []sprite.DecodeOption{
+		sprite.Width(1),
+		sprite.Height(1),
+	}
+	expected := make([]byte, 256)
+	r.Read(expected)
+	r.Seek(0, io.SeekStart)
+
+	d := sprite.NewDecoder(r, opts...)
+
+	s, err := d.Decode()
+	if err != nil {
+		log.Fatalf("Decoding error, %v", err)
+	}
+
+	buf := new(bytes.Buffer)
+	e := sprite.NewEncoder(buf)
+
+	for i := 0; i < b.N; i++ {
+		e.Encode(s)
 	}
 }
