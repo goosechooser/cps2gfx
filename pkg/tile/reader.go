@@ -6,8 +6,6 @@ import (
 	"io"
 )
 
-const lower = 0x0F
-
 type reader interface {
 	io.Reader
 }
@@ -70,7 +68,7 @@ func (d *Decoder) decode() error {
 	}
 
 	data := unpack32(d.buf)
-	d.t = Tile{0, data, 16}
+	d.t = Tile{0, data, d.Dimensions}
 
 	return nil
 }
@@ -100,8 +98,11 @@ func unpack32(b []byte) (t []byte) {
 
 // Massages 32 uint32s into 64 'pixels'
 func toPixel32(row []uint32) (t []byte) {
+	const tSizeUnpacked = 256
+	const lower = 0x0F
+
 	pix := make([]byte, 4)
-	t = make([]byte, 256)
+	t = make([]byte, tSizeUnpacked)
 
 	for i, v := range row[16:] {
 		binary.LittleEndian.PutUint32(pix, v)
@@ -130,38 +131,37 @@ func toPixel32(row []uint32) (t []byte) {
 }
 
 // Unpack16 unpacks all 32bytes of a 8x8 tile 'at once'
-func unpack16(b []byte) (t []byte) {
-	row := make([]uint16, 16)
-	for i := 0; i < 16; i++ {
-		p := []byte{b[i], b[i+16]}
-		row[i] = binary.LittleEndian.Uint16(p)
-	}
+// func unpack16(b []byte) (t []byte) {
+// 	row := make([]uint16, 16)
+// 	for i := 0; i < 16; i++ {
+// 		p := []byte{b[i], b[i+16]}
+// 		row[i] = binary.LittleEndian.Uint16(p)
+// 	}
 
-	transpose16(row)
-	t = toPixel16(row)
-	return reverse(t)
-}
+// 	transpose16(row)
+// 	t = toPixel16(row)
+// 	return reverse(t)
+// }
 
-func toPixel16(row []uint16) (t []byte) {
-	lower := byte(15)
-	pix := make([]byte, 2)
-	t = make([]byte, 64)
+// func toPixel16(row []uint16) (t []byte) {
+// 	pix := make([]byte, 2)
+// 	t = make([]byte, 64)
 
-	for i, v := range row[8:] {
-		binary.LittleEndian.PutUint16(pix, v)
-		t[i] = pix[1] >> 4
-		t[i+8] = pix[1] & lower
-		t[i+16] = pix[0] >> 4
-		t[i+24] = pix[0] & lower
-	}
+// 	for i, v := range row[8:] {
+// 		binary.LittleEndian.PutUint16(pix, v)
+// 		t[i] = pix[1] >> 4
+// 		t[i+8] = pix[1] & lower
+// 		t[i+16] = pix[0] >> 4
+// 		t[i+24] = pix[0] & lower
+// 	}
 
-	for i, v := range row[:8] {
-		binary.LittleEndian.PutUint16(pix, v)
-		t[i+32] = pix[1] >> 4
-		t[i+40] = pix[1] & lower
-		t[i+48] = pix[0] >> 4
-		t[i+56] = pix[0] & lower
-	}
+// 	for i, v := range row[:8] {
+// 		binary.LittleEndian.PutUint16(pix, v)
+// 		t[i+32] = pix[1] >> 4
+// 		t[i+40] = pix[1] & lower
+// 		t[i+48] = pix[0] >> 4
+// 		t[i+56] = pix[0] & lower
+// 	}
 
-	return t
-}
+// 	return t
+// }

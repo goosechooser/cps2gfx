@@ -61,9 +61,10 @@ func NewDecoder(r io.ReadSeeker, opts ...DecodeOption) *Decoder {
 // decode handles reading the data that makes up a Sprite.
 // The actual reading/unpacking is handled by the tile.Decoder
 func (d *Decoder) decode() (b []byte, err error) {
-	row := make([]tile.Tile, d.Width)
+	const tSizeUnpacked = 256
 
-	rowLength := d.Width * 256
+	rowLength := d.Width * tSizeUnpacked
+	row := make([]tile.Tile, d.Width)
 	b = make([]byte, rowLength*d.Height)
 
 	for h := 0; h < d.Height; h++ {
