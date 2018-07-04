@@ -11,27 +11,35 @@ import (
 	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 )
 
-// Encode do a trick
-func Encode(w []io.Writer) {
-
+// Encode writes out b to the given streams
+func Encode(b []byte, w ...io.Writer) (err error) {
+	d := deinterleave(b)
+	for i, wr := range w {
+		_, err = wr.Write(d[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Deinterleave ... deinterleave
-func Deinterleave(b []byte) (d [][]byte) {
-	firstPass := byteutils.Deinterleave(b, 1048576)
+func deinterleave(b []byte) (d [][]byte) {
+	firstPass := make([][]byte, 2)
+	byteutils.Deinterleave(b, 1048576, firstPass...)
 
-	secondPass := [][]byte{}
-	for _, i := range firstPass {
-		secondPass = append(secondPass, byteutils.Deinterleave(i, 64)...)
+	secondPass := make([][]byte, len(firstPass)*2)
+	for i, f := range firstPass {
+		byteutils.Deinterleave(f, 64, secondPass[2*i:2*i+2]...)
 	}
 
-	final := [][]byte{}
-	for _, i := range secondPass {
-		final = append(final, byteutils.Deinterleave(i, 2)...)
+	final := make([][]byte, len(secondPass)*2)
+	for i, s := range secondPass {
+		byteutils.Deinterleave(s, 2, final[2*i:2*i+2]...)
 	}
 
 	for i := 0; i < 4; i++ {
-		d = append(d, byteutils.Interleave(final[i], final[i+4], 2))
+		d = append(d, byteutils.Interleave(2, final[i], final[i+4]))
 	}
 
 	return d
