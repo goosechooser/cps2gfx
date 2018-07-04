@@ -20,9 +20,10 @@ type Sprite struct {
 
 // ToImage massages all the Tiles together and returns an Image.
 func (s *Sprite) ToImage(p color.Palette) image.Image {
-	// 16 is a magic number that should be explained/refactored
-	dy := 16 * s.Dy
-	dx := 16 * s.Dx
+	const tileDim = 16
+
+	dy := tileDim * s.Dy
+	dx := tileDim * s.Dx
 
 	r := image.Rect(0, 0, dx, dy)
 	img := image.NewPaletted(r, p)
@@ -36,9 +37,11 @@ func (s *Sprite) ToImage(p color.Palette) image.Image {
 // you should refactor to use dependency injection
 // then move the function out of the package
 func (s *Sprite) String() string {
+	const tileDim = 16
 	var b strings.Builder
+
 	for i, v := range s.Data {
-		if i%(16*s.Dx) == 0 {
+		if i%(tileDim*s.Dx) == 0 {
 			fmt.Fprintf(&b, "\n")
 		}
 		fmt.Fprintf(&b, "%d, ", v)
