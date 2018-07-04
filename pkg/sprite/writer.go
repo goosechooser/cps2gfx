@@ -20,9 +20,10 @@ func encode(b []byte, dx, dy int) []tile.Tile {
 	rowLength := dx * tSizeUnpacked
 	tiles := make([]tile.Tile, 0, dx*dy)
 	raw := make([][]byte, 0, dx*dy)
-
+	row := make([]byte, 16)
 	for y := 0; y < dy; y++ {
-		byteutils.Deinterleave(b[y*rowLength:], 16, raw[y*dx:y*dx+dx]...)
+		r, _ := byteutils.Deinterleave(b[y*rowLength:], row, dx)
+		raw = append(raw, r...)
 	}
 
 	for i := range raw {

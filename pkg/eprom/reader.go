@@ -13,48 +13,48 @@ import (
 	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 )
 
-type Pair struct {
-	Even, Odd []byte
+type pair struct {
+	even, odd []byte
 }
 
 //Decode combines 4 seperated EPROM banks
 func Decode(r []io.Reader) []byte {
-	p := make([]Pair, len(r))
+	p := make([]pair, len(r))
 	for i, v := range r {
 		p[i] = parse(v)
 	}
 
-	return Interleave(p)
+	return interleave(p)
 }
 
-func parse(r io.Reader) Pair {
+// prepares
+func parse(r io.Reader) pair {
+	n := make([]byte, 2)
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	p := byteutils.Deinterleave(b, 2)
-	return Pair{p[0], p[1]}
+	p, _ := byteutils.Deinterleave(b, n, 2)
+	return pair{p[0], p[1]}
 }
 
-// InterleavePairs ... interleaves Pairs
-func InterleavePairs(p []Pair, n int) (ip []Pair) {
-	t := 0
+// does the entire interleave process for the files
+func interleave(p []pair) []byte {
+	firstPass := interleavePairs(p, 2)
+	secondPass := interleavePairs(firstPass, 64)
+	final := byteutils.Interleave(1048576, secondPass[0].even, secondPass[0].odd)
+
+	return final
+}
+
+// interleaves even and odd parts
+func interleavePairs(p []pair, n int) (ip []pair) {
 	for i := 0; i < len(p)/2; i++ {
-		t = i * 2
-		even := byteutils.Interleave(p[t].Even, p[t+1].Even, n)
-		odd := byteutils.Interleave(p[t].Odd, p[t+1].Odd, n)
-		ip = append(ip, Pair{even, odd})
+		even := byteutils.Interleave(n, p[i*2].even, p[i*2+1].even)
+		odd := byteutils.Interleave(n, p[i*2].odd, p[i*2+1].odd)
+		ip = append(ip, pair{even, odd})
 	}
 
 	return ip
-}
-
-// Interleave but for FILES
-func Interleave(p []Pair) []byte {
-	firstPass := InterleavePairs(p, 2)
-	secondPass := InterleavePairs(firstPass, 64)
-	final := byteutils.Interleave(secondPass[0].Even, secondPass[0].Odd, 1048576)
-
-	return final
 }

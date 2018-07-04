@@ -23,20 +23,25 @@ func Interleave(n int, b ...[]byte) (ibuf []byte) {
 	return ibuf
 }
 
-// Deinterleave seperates one slice into two slices. Could make this variadic tbh
-// n is the number of bytes to deinterleave by.
-// debuf is a variable number of []bytes
-// deinterleave data is read into these
-func Deinterleave(buf []byte, n int, debuf ...[]byte) {
-	b := bytes.NewBuffer(buf)
+// Deinterleave seperates one slice into o number of slices.
+// the size of n will determine the number of bytes to deinterleave by
+func Deinterleave(b, n []byte, o int) (debuf [][]byte, err error) {
+	buf := bytes.NewBuffer(b)
+	debuf = make([][]byte, o)
 
 	for i := range debuf {
-		debuf[i] = make([]byte, 0, b.Len()/len(debuf))
+		debuf[i] = make([]byte, 0, buf.Len()/o)
 	}
 
-	for b.Len() > 0 {
+	for buf.Len() > 0 {
 		for i := range debuf {
-			debuf[i] = append(debuf[i], b.Next(n)...)
+			_, err = buf.Read(n)
+			if err != nil {
+				break
+			}
+			debuf[i] = append(debuf[i], n...)
 		}
 	}
+
+	return debuf, err
 }

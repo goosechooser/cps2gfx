@@ -25,17 +25,21 @@ func Encode(b []byte, w ...io.Writer) (err error) {
 
 // Deinterleave ... deinterleave
 func deinterleave(b []byte) (d [][]byte) {
-	firstPass := make([][]byte, 2)
-	byteutils.Deinterleave(b, 1048576, firstPass...)
+	n := make([]byte, 1048576)
+	firstPass, _ := byteutils.Deinterleave(b, n, 2)
 
-	secondPass := make([][]byte, len(firstPass)*2)
-	for i, f := range firstPass {
-		byteutils.Deinterleave(f, 64, secondPass[2*i:2*i+2]...)
+	n = make([]byte, 64)
+	secondPass := make([][]byte, 0, len(firstPass)*2)
+	for i := range firstPass {
+		s, _ := byteutils.Deinterleave(firstPass[i], n, 2)
+		secondPass = append(secondPass, s...)
 	}
 
-	final := make([][]byte, len(secondPass)*2)
-	for i, s := range secondPass {
-		byteutils.Deinterleave(s, 2, final[2*i:2*i+2]...)
+	n = make([]byte, 2)
+	final := make([][]byte, 0, len(secondPass)*2)
+	for i := range secondPass {
+		f, _ := byteutils.Deinterleave(secondPass[i], n, 2)
+		final = append(final, f...)
 	}
 
 	for i := 0; i < 4; i++ {
