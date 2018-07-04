@@ -7,11 +7,10 @@ import (
 	"bytes"
 )
 
-
 // Interleave combines nbyte slices.
 // n is the number of bytes to interleave by.
 func Interleave(n int, b ...[]byte) (ibuf []byte) {
-	leng := len(b)*len(b[0])
+	leng := len(b) * len(b[0])
 	ibuf = make([]byte, 0, leng)
 	nInterleaves := len(b[0]) / n
 
@@ -36,7 +35,7 @@ func Deinterleave(buf []byte, n int, debuf ...[]byte) {
 	}
 
 	for b.Len() > 0 {
-		for i := range(debuf) {
+		for i := range debuf {
 			debuf[i] = append(debuf[i], b.Next(n)...)
 		}
 	}

@@ -1,8 +1,8 @@
 package sprite_test
 
 import (
-	"io"
 	"bytes"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
