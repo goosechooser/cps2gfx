@@ -129,39 +129,3 @@ func toPixel32(row []uint32) (t []byte) {
 	}
 	return t
 }
-
-// Unpack16 unpacks all 32bytes of a 8x8 tile 'at once'
-// func unpack16(b []byte) (t []byte) {
-// 	row := make([]uint16, 16)
-// 	for i := 0; i < 16; i++ {
-// 		p := []byte{b[i], b[i+16]}
-// 		row[i] = binary.LittleEndian.Uint16(p)
-// 	}
-
-// 	transpose16(row)
-// 	t = toPixel16(row)
-// 	return reverse(t)
-// }
-
-// func toPixel16(row []uint16) (t []byte) {
-// 	pix := make([]byte, 2)
-// 	t = make([]byte, 64)
-
-// 	for i, v := range row[8:] {
-// 		binary.LittleEndian.PutUint16(pix, v)
-// 		t[i] = pix[1] >> 4
-// 		t[i+8] = pix[1] & lower
-// 		t[i+16] = pix[0] >> 4
-// 		t[i+24] = pix[0] & lower
-// 	}
-
-// 	for i, v := range row[:8] {
-// 		binary.LittleEndian.PutUint16(pix, v)
-// 		t[i+32] = pix[1] >> 4
-// 		t[i+40] = pix[1] & lower
-// 		t[i+48] = pix[0] >> 4
-// 		t[i+56] = pix[0] & lower
-// 	}
-
-// 	return t
-// }

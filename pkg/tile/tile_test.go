@@ -29,35 +29,6 @@ func open(f string) *bytes.Reader {
 	return bytes.NewReader(b)
 }
 
-
-func TestUnpack16(t *testing.T) {
-	cases := []struct {
-		input  []byte
-		output []byte
-	}{
-		{packed, pixels},
-	}
-	for i, c := range cases {
-		got := unpack16(c.input)
-		t.Logf("case %d len got %d len ouput %d\n", i, len(got), len(c.output))
-		buf := bytes.NewBuffer(got)
-		buf2 := bytes.NewBuffer(c.output)
-		row := make([]byte, 8)
-		row2 := make([]byte, 8)
-		i := 0
-		for buf.Len() > 0 {
-			buf.Read(row)
-			buf2.Read(row2)
-			if bytes.Equal(row, row2) != true {
-				t.Errorf("Row %d\n", i)
-				t.Errorf("%x, want %x", row, row2)
-				// readRows(row, c.output, t)
-			}
-			i++
-		}
-	}
-}
-
 func TestUnpack32(t *testing.T) {
 	cases := []struct {
 		input  []byte
@@ -111,24 +82,6 @@ func readRows(got, expected []byte, t *testing.T) {
 	}
 }
 
-func TestPack16(t *testing.T) {
-	cases := []struct {
-		input  []byte
-		output []byte
-	}{
-		{packed, pixels},
-	}
-	for i, c := range cases {
-		u := unpack16(c.input)
-		got := pack16(u)
-		if bytes.Equal(got, c.input) != true {
-			t.Errorf("Case %d\n", i)
-			t.Errorf("PackT(%q) == %q, want %q\n", u, got, c.input)
-			t.Errorf("Len of got %d\n", len(got))
-		}
-	}
-}
-
 func TestPack32(t *testing.T) {
 	cases := []struct {
 		input  []byte
@@ -156,19 +109,6 @@ func TestPack32(t *testing.T) {
 	}
 }
 
-func BenchmarkUnpack16(b *testing.B) {
-	cases := []struct {
-		input []byte
-	}{
-		{packed},
-	}
-	for _, c := range cases {
-		for n := 0; n < b.N; n++ {
-			unpack16(c.input)
-		}
-	}
-}
-
 func BenchmarkUnpack32(b *testing.B) {
 	cases := []struct {
 		input []byte
@@ -185,20 +125,6 @@ func BenchmarkUnpack32(b *testing.B) {
 
 		for n := 0; n < b.N; n++ {
 			unpack32(m)
-		}
-	}
-}
-
-func BenchmarkPack16(b *testing.B) {
-	cases := []struct {
-		input []byte
-	}{
-		{packed},
-	}
-	for _, c := range cases {
-		unpacked := unpack16(c.input)
-		for n := 0; n < b.N; n++ {
-			pack16(unpacked)
 		}
 	}
 }
