@@ -51,8 +51,6 @@ func NewDecoder(r io.ReadSeeker, opts ...DecodeOption) *Decoder {
 		td: *tile.NewDecoder(r),
 		r: r,
 	}
-	// probably make this a DecodeOption later?
-	// d.rowOffset = int64(d.td.Dimensions * 128)
 
 	for _, opt := range opts {
 		opt(d)
