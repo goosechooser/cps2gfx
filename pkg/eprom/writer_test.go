@@ -3,6 +3,7 @@ package eprom_test
 import (
 	"bytes"
 	"testing"
+	"os"
 
 	"github.com/goosechooser/cps2gfx/pkg/eprom"
 )
@@ -15,7 +16,12 @@ func TestDeinterleave(t *testing.T) {
 		expected[i] = open(v, t)
 	}
 
-	b := open("testdata/mock.final", t)
+
+	file, err := os.Open("testdata/mock.final")
+	if err != nil {
+		t.Error(err)
+	}
+	defer file.Close()
 
 	got := make([]*bytes.Buffer, 4)
 	for i := range got {
@@ -24,7 +30,7 @@ func TestDeinterleave(t *testing.T) {
 
 	// There is some weirdness related to passing in slices of interfaces that I do not fully understand
 	// so we just manually do it
-	eprom.Encode(b, got[0], got[1], got[2], got[3])
+	eprom.Encode(file, got[0], got[1], got[2], got[3])
 
 	for i := range got {
 		if bytes.Equal(got[i].Bytes(), expected[i]) != true {

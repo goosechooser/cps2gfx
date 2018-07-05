@@ -6,14 +6,16 @@
 package eprom
 
 import (
+	"bytes"
 	"io"
 
 	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 )
 
 // Encode writes out b to the given streams
-func Encode(b []byte, w ...io.Writer) (err error) {
-	d := deinterleave(b)
+// func Encode(b []byte, w ...io.Writer) (err error) {
+func Encode(r io.Reader, w ...io.Writer) (err error) {
+	d := deinterleave(r)
 	for i, wr := range w {
 		_, err = wr.Write(d[i])
 		if err != nil {
@@ -24,21 +26,23 @@ func Encode(b []byte, w ...io.Writer) (err error) {
 }
 
 // Deinterleave ... deinterleave
-func deinterleave(b []byte) (d [][]byte) {
+func deinterleave(r io.Reader) (d [][]byte) {
 	n := make([]byte, 1048576)
-	firstPass, _ := byteutils.Deinterleave(b, n, 2)
+	firstPass, _ := byteutils.Deinterleave(r, n, 2)
 
 	n = make([]byte, 64)
 	secondPass := make([][]byte, 0, len(firstPass)*2)
 	for i := range firstPass {
-		s, _ := byteutils.Deinterleave(firstPass[i], n, 2)
+		r = bytes.NewReader(firstPass[i])
+		s, _ := byteutils.Deinterleave(r, n, 2)
 		secondPass = append(secondPass, s...)
 	}
 
 	n = make([]byte, 2)
 	final := make([][]byte, 0, len(secondPass)*2)
 	for i := range secondPass {
-		f, _ := byteutils.Deinterleave(secondPass[i], n, 2)
+		r = bytes.NewReader(secondPass[i])
+		f, _ := byteutils.Deinterleave(r, n, 2)
 		final = append(final, f...)
 	}
 

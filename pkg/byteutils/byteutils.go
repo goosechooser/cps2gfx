@@ -5,6 +5,7 @@ package byteutils
 
 import (
 	"bytes"
+	"io"
 )
 
 // Interleave combines nbyte slices.
@@ -23,10 +24,11 @@ func Interleave(n int, b ...[]byte) (ibuf []byte) {
 	return ibuf
 }
 
-// Deinterleave seperates one slice into o number of slices.
+// Deinterleave seperates a stream into o number of slices.
 // the size of n will determine the number of bytes to deinterleave by
-func Deinterleave(b, n []byte, o int) (debuf [][]byte, err error) {
-	buf := bytes.NewBuffer(b)
+func Deinterleave(r io.Reader, n []byte, o int) (debuf [][]byte, err error) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
 	debuf = make([][]byte, o)
 
 	for i := range debuf {
