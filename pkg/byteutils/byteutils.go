@@ -8,16 +8,20 @@ import (
 	"io"
 )
 
-// Interleave combines nbyte slices.
-// n is the number of bytes to interleave by.
-func Interleave(n int, b ...[]byte) (ibuf []byte) {
-	leng := len(b) * len(b[0])
-	ibuf = make([]byte, 0, leng)
-	nInterleaves := len(b[0]) / n
+// Interleave combines multiple readers by alternating every len(b) bytes
+func Interleave(n int, r...io.Reader) (ibuf []byte) {
+	b := make([]byte, n)
+	ibuf = make([]byte, 0, len(r) * len(b))
+	bufs := make([]bytes.Buffer, len(r))
 
-	for i := 0; i < nInterleaves; i++ {
-		for _, buf := range b {
-			ibuf = append(ibuf, buf[i*n:i*n+n]...)
+	for i := range r {
+		bufs[i].ReadFrom(r[i])
+	}
+
+	for bufs[0].Len() > 0 {
+		for i := range bufs {
+			bufs[i].Read(b)
+			ibuf = append(ibuf, b...)
 		}
 	}
 
@@ -26,7 +30,8 @@ func Interleave(n int, b ...[]byte) (ibuf []byte) {
 
 // Deinterleave seperates a stream into o number of slices.
 // the size of n will determine the number of bytes to deinterleave by
-func Deinterleave(r io.Reader, n []byte, o int) (debuf [][]byte, err error) {
+func Deinterleave(r io.Reader, n int, o int) (debuf [][]byte, err error) {
+	b := make([]byte, n)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r)
 	debuf = make([][]byte, o)
@@ -37,11 +42,11 @@ func Deinterleave(r io.Reader, n []byte, o int) (debuf [][]byte, err error) {
 
 	for buf.Len() > 0 {
 		for i := range debuf {
-			_, err = buf.Read(n)
+			_, err = buf.Read(b)
 			if err != nil {
 				break
 			}
-			debuf[i] = append(debuf[i], n...)
+			debuf[i] = append(debuf[i], b...)
 		}
 	}
 

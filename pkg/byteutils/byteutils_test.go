@@ -2,10 +2,21 @@ package byteutils_test
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 )
+
+// because while a slice of bytes.Reader is a collection of things that
+// satisfy the io.Reader interface, it is not /a slice of io.Reader/
+func why(b ...[]byte) []io.Reader {
+	r := make([]io.Reader, len(b))
+	for i := range b {
+		r[i] = bytes.NewReader(b[i])
+	}
+	return r
+}
 
 func TestInterleave(t *testing.T) {
 	cases := []struct {
@@ -30,8 +41,13 @@ func TestInterleave(t *testing.T) {
 			[]byte("acbdefdeefgh"), 2,
 		},
 	}
+
 	for _, c := range cases {
-		got := byteutils.Interleave(c.n, c.files...)
+		br := make([]*bytes.Reader, len(c.files))
+		for i := range br {
+			br[i] = bytes.NewReader(c.files[i])
+		}
+		got := byteutils.Interleave(c.n, why(c.files...)...)
 		if bytes.Equal(got, c.interleaved) != true {
 			t.Errorf("Interleave == %q, want %q", got, c.interleaved)
 		}
@@ -59,7 +75,7 @@ func TestDeinterleave(t *testing.T) {
 		}},
 	}
 	for _, c := range cases {
-		got, _ := byteutils.Deinterleave(c.buf, c.n, c.o)
+		got, _ := byteutils.Deinterleave(bytes.NewReader(c.buf), len(c.n), c.o)
 
 		if bytes.Equal(got[0], c.debuf[0]) != true {
 			t.Errorf("Deinterleave(%q) == %q, want %q", c.buf, got[0], c.debuf[0])
@@ -80,9 +96,8 @@ func TestInterleaveThenDeinterleave(t *testing.T) {
 		{[]byte("ac"), []byte("bd"), []byte("acbd"), 2},
 	}
 	for _, c := range cases {
-		got := byteutils.Interleave(c.n, c.file1, c.file2)
-		n := make([]byte, c.n)
-		final, _ := byteutils.Deinterleave(got, n, 2)
+		got := byteutils.Interleave(c.n, why(c.file1, c.file2)...)
+		final, _ := byteutils.Deinterleave(bytes.NewReader(got), c.n, 2)
 
 		if bytes.Equal(final[0], c.file1) != true {
 			t.Errorf("Did not interleave then deinterleave properly, got %q want %q", final[0], c.file1)
@@ -104,7 +119,7 @@ func BenchmarkInterleave(b *testing.B) {
 	}
 	for _, c := range cases {
 		for i := 0; i < b.N; i++ {
-			byteutils.Interleave(c.n, c.file1, c.file2)
+			byteutils.Interleave(c.n, why(c.file1, c.file2)...)
 		}
 	}
 }
@@ -130,8 +145,10 @@ func BenchmarkDeinterleave(b *testing.B) {
 		}},
 	}
 	for _, c := range cases {
+		buf := bytes.NewReader(c.buf)
+		n := len(c.n)
 		for i := 0; i < b.N; i++ {
-			byteutils.Deinterleave(c.buf, c.n, c.o)
+			byteutils.Deinterleave(buf, n, c.o)
 		}
 	}
 }

@@ -6,44 +6,49 @@
 package eprom
 
 import (
+	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 
 	"github.com/goosechooser/cps2gfx/pkg/byteutils"
 )
 
 type pair struct {
-	even, odd []byte
+	even, odd *bytes.Reader
+}
+
+func newPair(even, odd []byte) *pair {
+	return &pair{bytes.NewReader(even), bytes.NewReader(odd)}
 }
 
 //Decode combines 4 seperated EPROM banks
 func Decode(r []io.Reader) []byte {
 	p := make([]pair, len(r))
 	for i, v := range r {
-		p[i] = parse(v)
+		p[i] = *parse(v)
 	}
 
 	return interleave(p)
 }
 
 // prepares
-func parse(r io.Reader) pair {
-	n := make([]byte, 2)
-	b, err := ioutil.ReadAll(r)
+func parse(r io.Reader) *pair {
+	b := new(bytes.Buffer)
+
+	_, err := b.ReadFrom(r)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	p, _ := byteutils.Deinterleave(b, n, 2)
-	return pair{p[0], p[1]}
+	p, _ := byteutils.Deinterleave(b, 2, 2)
+	return newPair(p[0], p[1])
 }
 
 // does the entire interleave process for the files
 func interleave(p []pair) []byte {
 	firstPass := interleavePairs(p, 2)
 	secondPass := interleavePairs(firstPass, 64)
-	final := byteutils.Interleave(1048576, secondPass[0].even, secondPass[0].odd)
+	final := byteutils.Interleave(1048576,secondPass[0].even,secondPass[0].odd)
 
 	return final
 }
@@ -53,7 +58,7 @@ func interleavePairs(p []pair, n int) (ip []pair) {
 	for i := 0; i < len(p)/2; i++ {
 		even := byteutils.Interleave(n, p[i*2].even, p[i*2+1].even)
 		odd := byteutils.Interleave(n, p[i*2].odd, p[i*2+1].odd)
-		ip = append(ip, pair{even, odd})
+		ip = append(ip, *newPair(even, odd))
 	}
 
 	return ip

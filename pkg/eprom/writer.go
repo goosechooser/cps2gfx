@@ -13,41 +13,30 @@ import (
 )
 
 // Encode writes out b to the given streams
-// func Encode(b []byte, w ...io.Writer) (err error) {
-func Encode(r io.Reader, w ...io.Writer) (err error) {
-	d := deinterleave(r)
-	for i, wr := range w {
-		_, err = wr.Write(d[i])
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func Encode(r io.Reader) (en [][]byte) {
+	return deinterleave(r)
 }
 
 // Deinterleave ... deinterleave
 func deinterleave(r io.Reader) (d [][]byte) {
-	n := make([]byte, 1048576)
-	firstPass, _ := byteutils.Deinterleave(r, n, 2)
+	firstPass, _ := byteutils.Deinterleave(r, 1048576, 2)
 
-	n = make([]byte, 64)
 	secondPass := make([][]byte, 0, len(firstPass)*2)
 	for i := range firstPass {
 		r = bytes.NewReader(firstPass[i])
-		s, _ := byteutils.Deinterleave(r, n, 2)
+		s, _ := byteutils.Deinterleave(r, 64, 2)
 		secondPass = append(secondPass, s...)
 	}
 
-	n = make([]byte, 2)
 	final := make([][]byte, 0, len(secondPass)*2)
 	for i := range secondPass {
 		r = bytes.NewReader(secondPass[i])
-		f, _ := byteutils.Deinterleave(r, n, 2)
+		f, _ := byteutils.Deinterleave(r, 2, 2)
 		final = append(final, f...)
 	}
 
 	for i := 0; i < 4; i++ {
-		d = append(d, byteutils.Interleave(2, final[i], final[i+4]))
+		d = append(d, byteutils.Interleave(2, bytes.NewReader(final[i]), bytes.NewReader(final[i+4])))
 	}
 
 	return d
