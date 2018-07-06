@@ -56,34 +56,32 @@ func TestInterleave(t *testing.T) {
 
 func TestDeinterleave(t *testing.T) {
 	cases := []struct {
-		buf, n []byte
-		o      int
+		buf []byte
+		n, o      int
 		debuf  [][]byte
 	}{
-		{[]byte("abcd"), make([]byte, 1), 2, [][]byte{
+		{[]byte("abcd"), 1, 2, [][]byte{
 			[]byte("ac"),
 			[]byte("bd"),
 		}},
-		{[]byte("abcd"), make([]byte, 2), 2, [][]byte{
+		{[]byte("abcd"), 2, 2, [][]byte{
 			[]byte("ab"),
 			[]byte("cd"),
 		}},
-		{[]byte("abcdef"), make([]byte, 2), 3, [][]byte{
+		{[]byte("abcdef"), 2, 3, [][]byte{
 			[]byte("ab"),
 			[]byte("cd"),
 			[]byte("ef"),
 		}},
 	}
 	for _, c := range cases {
-		got, _ := byteutils.Deinterleave(bytes.NewReader(c.buf), len(c.n), c.o)
+		got, _ := byteutils.Deinterleave(bytes.NewReader(c.buf), c.n, c.o)
 
-		if bytes.Equal(got[0], c.debuf[0]) != true {
-			t.Errorf("Deinterleave(%q) == %q, want %q", c.buf, got[0], c.debuf[0])
+		for i := range got {
+			if bytes.Equal(got[i], c.debuf[i]) != true {
+				t.Errorf("Deinterleave(%q) == %q, want %q", c.buf, got[i], c.debuf[i])
+			}
 		}
-		if bytes.Equal(got[1], c.debuf[1]) != true {
-			t.Errorf("Deinterleave(%q) == %q, want %q", c.buf, got[1], c.debuf[1])
-		}
-
 	}
 }
 
@@ -118,27 +116,28 @@ func BenchmarkInterleave(b *testing.B) {
 		{[]byte("ac"), []byte("bd"), []byte("acbd"), 2},
 	}
 	for _, c := range cases {
+		nice := why(c.file1, c.file2)
 		for i := 0; i < b.N; i++ {
-			byteutils.Interleave(c.n, why(c.file1, c.file2)...)
+			byteutils.Interleave(c.n, nice...)
 		}
 	}
 }
 
 func BenchmarkDeinterleave(b *testing.B) {
 	cases := []struct {
-		buf, n []byte
-		o      int
+		buf []byte
+		n, o      int
 		debuf  [][]byte
 	}{
-		{[]byte("abcd"), make([]byte, 2), 1, [][]byte{
+		{[]byte("abcd"), 2, 1, [][]byte{
 			[]byte("ac"),
 			[]byte("bd"),
 		}},
-		{[]byte("abcd"), make([]byte, 2), 2, [][]byte{
+		{[]byte("abcd"), 2, 2, [][]byte{
 			[]byte("ab"),
 			[]byte("cd"),
 		}},
-		{[]byte("abcdef"), make([]byte, 3), 2, [][]byte{
+		{[]byte("abcdef"), 3, 2, [][]byte{
 			[]byte("ab"),
 			[]byte("cd"),
 			[]byte("ef"),
@@ -146,9 +145,11 @@ func BenchmarkDeinterleave(b *testing.B) {
 	}
 	for _, c := range cases {
 		buf := bytes.NewReader(c.buf)
-		n := len(c.n)
 		for i := 0; i < b.N; i++ {
-			byteutils.Deinterleave(buf, n, c.o)
+			byteutils.Deinterleave(buf, c.n, c.o)
 		}
 	}
 }
+
+// pkg: github.com/goosechooser/cps2gfx/pkg/byteutils
+// BenchmarkDeinterleave-8   	  300000	      3891 ns/op	   20615 B/op	      11 allocs/op
