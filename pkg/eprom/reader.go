@@ -48,7 +48,7 @@ func parse(r io.Reader) *pair {
 func interleave(p []pair) []byte {
 	firstPass := interleavePairs(p, 2)
 	secondPass := interleavePairs(firstPass, 64)
-	final := byteutils.Interleave(1048576,secondPass[0].even,secondPass[0].odd)
+	final := byteutils.Interleave(1048576, secondPass[0].even, secondPass[0].odd)
 
 	return final
 }

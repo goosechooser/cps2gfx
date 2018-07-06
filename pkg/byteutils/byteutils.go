@@ -9,9 +9,9 @@ import (
 )
 
 // Interleave combines multiple readers by alternating every len(b) bytes
-func Interleave(n int, r...io.Reader) (ibuf []byte) {
+func Interleave(n int, r ...io.Reader) (ibuf []byte) {
 	b := make([]byte, n)
-	ibuf = make([]byte, 0, len(r) * len(b))
+	ibuf = make([]byte, 0, len(r)*len(b))
 	bufs := make([]bytes.Buffer, len(r))
 
 	for i := range r {
